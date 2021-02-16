@@ -1,21 +1,19 @@
-![Test](https://github.com/ravsamhq/notify-slack-action/workflows/Test/badge.svg)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-# Notify Slack Action
+# Notify Zulip Action
 
-Send Github Actions workflow status notifications to Slack regarding failures, warnings or even success. You can read more about the action in [our blog post](https://www.ravsam.in/blog/send-slack-notification-when-github-actions-fails/).
+Send Github Actions workflow status notifications to Zulip regarding failures, warnings or even success.
 
 ### Example workflow
 
 ```yaml
-steps:
-  - uses: ravsamhq/notify-slack-action@master
-    if: always()
-    with:
-      status: ${{ job.status }}
-      notify_when: 'failure' # default is 'success,failure,warnings'
-    env:
-      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }} # required
+      - name: Report if failure
+        if: always()
+        uses: amanagr/notify-zulip-action@master
+        with:
+          status: ${{ job.status }}
+          notify_when: 'failure'
+        env:
+          ZULIP_BOT_KEY: ${{ secrets.ZULIP_BOT_KEY }}
+          STREAM: 'test'
 ```
-
-<sub>Made in Python &bull; By [Ravgeet Dhillon](https://github.com/ravgeetdhillon) @ [RavSam Web Solutions](https://www.ravsam.in).</sub>

@@ -2,20 +2,7 @@ import requests
 import os
 import json
 import sys
-
-
-def actionColor(status):
-    """
-    Get a action color based on the workflow status.
-    """
-
-    if status == 'success':
-        return 'good'
-    elif status == 'failure':
-        return 'danger'
-
-    return 'warning'
-
+import urllib.parse
 
 def actionStatus(status):
     """
@@ -29,47 +16,30 @@ def actionStatus(status):
 
     return 'passed with warnings'
 
-
-def actionEmoji(status):
-    """
-    Get an emoji based on the workflow status.
-    """
-
-    if status == 'success':
-        return ':sunglasses:'
-    elif status == 'failure':
-        return ':worried:'
-
-    return ':zipper_mouth_face:'
-
-
-def notify_slack(job_status, notify_when):
-    url = os.getenv('SLACK_WEBHOOK_URL')
-    workflow = os.getenv('GITHUB_WORKFLOW')
+def notify_zulip(job_status, notify_when):
+    bot_key = os.getenv('ZULIP_BOT_KEY')
     repo = os.getenv('GITHUB_REPOSITORY')
-    branch = os.getenv('GITHUB_REF')
-    commit = os.getenv('GITHUB_SHA')
-
-    commit_url = f'https://github.com/{repo}/commit/{commit}'
-    repo_url = f'https://github.com/{repo}/tree/{branch}'
-
-    color = actionColor(job_status)
+    if not bot_key:
+        return
+    branch = os.getenv('GITHUB_REF').split('/')[-1]
+    topic = urllib.parse.quote(f'{branch} failing')
+    stream = urllib.parse.quote(os.getenv('STREAM'))
+    url = f"https://chat.zulip.org/api/v1/external/circleci?api_key={bot_key}&stream={stream}&topic={topic}"
+    workflow = os.getenv('GITHUB_WORKFLOW')
     status_message = actionStatus(job_status)
-    emoji = actionEmoji(job_status)
+    run_id = os.getenv('GITHUB_RUN_ID')
 
-    message = f'{emoji} {workflow} {status_message} in <{repo_url}|{repo}@{branch}> on <{commit_url}|{commit[:7]}>.'
+    run_url = f'https://github.com/{repo}/actions/runs/{run_id}'
+    committer = os.getenv('GITHUB_ACTOR')
 
     payload = {
-        'attachments': [
-            {
-                'text': message,
-                'fallback': 'New Github Action Run',
-                'pretext': 'New Github Action Run',
-                'color': color,
-                'mrkdwn_in': ['text'],
-                'footer': 'Developed by <https://www.ravsam.in|RavSam>',
-            }
-        ]
+        "payload" : {
+            'reponame': repo,
+            'branch': branch,
+            'status': status_message,
+            'build_url': run_url,
+            'username': committer,
+        }
     }
 
     payload = json.dumps(payload)
@@ -80,13 +50,14 @@ def notify_slack(job_status, notify_when):
         notify_when = 'success,failure,warnings'
 
     if job_status in notify_when and not testing:
-        requests.post(url, data=payload, headers=headers)
+        res = requests.post(url, data=payload, headers=headers)
+        print(res)
 
 
 def main():
     job_status = os.getenv('INPUT_STATUS')
     notify_when = os.getenv('INPUT_NOTIFY_WHEN')
-    notify_slack(job_status, notify_when)
+    notify_zulip(job_status, notify_when)
 
 
 if __name__ == '__main__':

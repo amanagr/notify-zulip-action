@@ -1,12 +1,12 @@
-name: Notify Slack Action
-description: Send Github Actions workflow status notifications to Slack
-author: RavSam Web Solutions
+name: Notify Zulip Action
+description: Send Github Actions workflow status notifications to Zulip
+author: Aman Agrawal 
 inputs:
   status:
     description: Job Status
     required: true
   notify_when:
-    description: Specify on which events a slack notification is sent
+    description: Specify on which events a zulip notification is sent
     required: false
     default: 'success,failure,warnings'
 
